@@ -97,7 +97,7 @@ def run():
     pop.add_reporter(stats)
     pop.add_reporter(neat.StdOutReporter(True))
 
-    winner = pop.run(eval_genomes, 100)
+    winner = pop.run(eval_genomes, 5)
 
     with open('winner', 'wb') as f:
         pickle.dump(winner, f)
