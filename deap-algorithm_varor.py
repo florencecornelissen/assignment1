@@ -23,7 +23,7 @@ dom_l = -1
 n_population = 50  # 100
 gens = 50
 mate = 0.6
-mutation = 0.4
+mutation = 0.4 #mate+mutation need to be <= 1.0
 last_best = 0
 n_hidden_neurons = 15  # number of possible actions
 children = 2
