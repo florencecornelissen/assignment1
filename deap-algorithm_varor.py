@@ -99,7 +99,7 @@ for enemy in [1, 2, 3]:
         ii = np.argmax(fitnesses)
         print(f'{g} - max: {fitnesses[ii]} (health: {enemy_lifes[ii]}) - mean: {np.mean(fitnesses)}')
         pop = tb.select(pop, len(pop))
-        offs = algorithms.eaMuPlusLambda(pop, tb, mu, children, mate, mutation, gens)
+        offs = algorithms.eaMuPlusLambda(pop, tb, mu, children, mate, mutation, g)
         offs, fitnesses, enemy_lifes = evalpop(offs, env)
         pop = offs
 
