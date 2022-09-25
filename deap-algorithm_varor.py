@@ -27,6 +27,7 @@ mutation = 0.4 #mate+mutation need to be <= 1.0
 last_best = 0
 n_hidden_neurons = 15  # number of possible actions
 children = 2
+mu = 10 #number individuals to select for next generation
 budget = 500
 enemies = 1
 runs = 10
@@ -98,8 +99,9 @@ for enemy in [1, 2, 3]:
         ii = np.argmax(fitnesses)
         print(f'{g} - max: {fitnesses[ii]} (health: {enemy_lifes[ii]}) - mean: {np.mean(fitnesses)}')
         pop = tb.select(pop, len(pop))
-        offs = algorithms.varOr(pop, tb, children, mate, mutation)
+        offs = algorithms.eaMuPlusLambda(pop, tb, mu, children, mate, mutation, gens)
         offs, fitnesses, enemy_lifes = evalpop(offs, env)
         pop = offs
+
 
 

@@ -96,8 +96,8 @@ for enemy in [1, 2, 3]:
         ii = np.argmax(fitnesses)
         print(f'{g} - max: {fitnesses[ii]} (health: {enemy_lifes[ii]}) - mean: {np.mean(fitnesses)}')
         pop = tb.select(pop,len(pop))
-        offs = algorithms.varAnd(pop,tb,mate,mutation)
+        offs = algorithms.eaSimple(pop,tb,mate,mutation,gens)
         offs, fitnesses, enemy_lifes = evalpop(offs,env)
         pop = offs
-
-                
+        if enemy_lifes == 0:
+            g = g + 1
