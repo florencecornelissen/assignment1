@@ -22,7 +22,7 @@ dom_u = 1
 dom_l = -1
 n_population = 50  # 100
 gens = 50
-mate = 0.3
+mate = 0.3 #reproduction rate is 1 - mate - mutation
 mutation = 0.6 #mate+mutation need to be <= 1.0
 last_best = 0
 n_hidden_neurons = 15  # number of possible actions
@@ -101,7 +101,7 @@ for enemy in [1, 2, 3]:
         pop = tb.select(pop, len(pop))
         offs = algorithms.varOr(pop, tb, children, mate, mutation)
         offs, fitnesses, enemy_lifes = evalpop(offs, env)
-        pop = tb.select(pop + offs, children)
+        pop = tb.select(pop + offs, children) #eaMuPlusLambda selection procedure
 
 
 
