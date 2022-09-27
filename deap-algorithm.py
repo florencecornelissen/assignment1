@@ -33,7 +33,7 @@ envs = []
 eatype = "Roulette"
 # initializes environment with ai player using random controller, playing against static enemy
 
-for enemy in [1, 2, 3]:
+for enemy in [4, 6, 8]:
 
     env = Environment(experiment_name=experiment_name,
                             enemies=[enemy],
@@ -96,8 +96,6 @@ for enemy in [1, 2, 3]:
         ii = np.argmax(fitnesses)
         print(f'{g} - max: {fitnesses[ii]} (health: {enemy_lifes[ii]}) - mean: {np.mean(fitnesses)}')
         pop = tb.select(pop,len(pop))
-        offs = algorithms.eaSimple(pop,tb,mate,mutation,g)
+        offs = algorithms.varAnd(pop,tb,mate,mutation)
         offs, fitnesses, enemy_lifes = evalpop(offs,env)
         pop = offs
-        if enemy_lifes == 0:
-            g = g + 1

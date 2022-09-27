@@ -22,8 +22,8 @@ dom_u = 1
 dom_l = -1
 n_population = 50  # 100
 gens = 50
-mate = 0.6
-mutation = 0.4 #mate+mutation need to be <= 1.0
+mate = 0.3
+mutation = 0.6 #mate+mutation need to be <= 1.0
 last_best = 0
 n_hidden_neurons = 15  # number of possible actions
 children = 2
@@ -99,9 +99,9 @@ for enemy in [1, 2, 3]:
         ii = np.argmax(fitnesses)
         print(f'{g} - max: {fitnesses[ii]} (health: {enemy_lifes[ii]}) - mean: {np.mean(fitnesses)}')
         pop = tb.select(pop, len(pop))
-        offs = algorithms.eaMuPlusLambda(pop, tb, mu, children, mate, mutation, g)
+        offs = algorithms.varOr(pop, tb, children, mate, mutation)
         offs, fitnesses, enemy_lifes = evalpop(offs, env)
-        pop = offs
+        pop = tb.select(pop + offs, children)
 
 
 
