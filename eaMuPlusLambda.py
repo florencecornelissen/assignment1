@@ -1,34 +1,161 @@
 import sys, os
-sys.path.insert(0, 'evoman')
+sys.path.insert(0, 'evoman') 
+
 from evoman.environment import Environment
 from demo_controller import player_controller
 from deap import tools, creator, base, algorithms
 import numpy as np
-import json
-import multiprocessing
+from tqdm import tqdm
 
 
 headless = True
 if headless:
     os.environ["SDL_VIDEODRIVER"] = "dummy"
 
-experiment_name = 'test'
+experiment_name = 'experiment-varAnd'
 if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
-player_life = 100
-enemy_life = 100
-dom_u = 1
-dom_l = -1
-n_population = 50 #100
-gens = 50
-mate = 1 #cxpb
-mutation = 0.4 #matpb
-last_best = 0
-n_hidden_neurons = 15 #number of possible actions
-budget = 500
-enemies = 1
-runs = 10
-envs = []
-eatype = "Roulette"
-# initializes environment with ai player using random controller, playing against static enemy
+
+def evaluate(x,env):
+    """
+    Evaluate a single genome by simulating a game
+    """
+    fitness,p_l,e_l,time_ = env.play(pcont=x)
+    return fitness, e_l, p_l
+
+
+def evaluate_pop(pop, env, toolbox):
+    """
+    Evaluate the whole population
+    """
+    t_e_i = [i for i in pop if not i.fitness.valid]
+    tmp = [env for i in t_e_i]
+    fits = toolbox.map(toolbox.evaluate, t_e_i, tmp)
+
+    s = []
+    solution = False
+    for ind, (fit, e_l, p_l) in zip(pop, fits):
+        ind.fitness.values = (fit,)
+        s.append([fit, p_l-e_l])
+        if e_l <= 0:
+            solution = True
+
+    s = [*np.mean(s, axis=0), *np.max(s, axis=0)]
+    return (pop, s, solution)
+
+
+def main(args):
+
+    # array to store the run stats
+    stats = np.zeros((args.n_repeats, args.gens, 4))
+    won_gens = [None for _ in range(args.n_repeats)]
+
+    for n in range(args.n_repeats):
+
+        # define the environment
+        env = Environment(experiment_name=experiment_name,
+                                            enemies=args.enemies,
+                                            player_controller=player_controller(args.n_hid_neurons),
+                                            speed="fastest",
+                                            logs='off',
+                                            level=2
+                                            )
+
+        # calculate the number of weights
+        n_weights = (env.get_num_sensors() + 1) * args.n_hid_neurons + (args.n_hid_neurons+1) * 5
+
+        creator.create('FitnessBest', base.Fitness, weights = (1.0,))
+        creator.create('Individual', np.ndarray, fitness = creator.FitnessBest)
+
+        toolbox = base.Toolbox()
+        toolbox.register('indices', np.random.uniform, -1, 1) 
+        toolbox.register('individual', tools.initRepeat, creator.Individual, toolbox.indices, n = n_weights)
+        toolbox.register('population', tools.initRepeat, list, toolbox.individual, n = args.n_population)
+
+        toolbox.register("evaluate", evaluate)
+        toolbox.register("mate", tools.cxTwoPoint)                                  # crossover operator
+        toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.5)     # mutation operator
+        toolbox.register("select", tools.selTournament, tournsize=3)                # selection procedure
+
+        won = False
+
+        # initialize the population
+        population = toolbox.population(n=args.n_population)
+        population, stats_g, solution = evaluate_pop(population, env, toolbox)
+        stats[n, 0] = stats_g
+
+
+        # iterate over the number of generations
+        for g in tqdm(range(1, args.gens)):
+
+
+            offspring = algorithms.varOr(population, toolbox, args.children, args.mate, args.mutation)
+            offspring, stats_g, solution = evaluate_pop(offspring, env, toolbox)
+            population = toolbox.select(population + offspring, len(population))
+
+
+            # save generation statistics
+            stats[n, g] = stats_g
+
+            if solution is True and won is False:
+                won_gens[n] = g
+                won = True
+
+        del creator.Individual
+        del creator.FitnessBest
+    
+    return stats, won_gens
+    
+
+
+if __name__ == "__main__":
+    """
+    Example run to illustrate how to run this file
+    """
+
+    # create parameters class
+    parameters = type('MyClass', (object,), {'content':{}}) 
+
+    # add parameter values
+    parameters.n_population     = 100
+    parameters.enemies          = [3] 
+    parameters.mutation         = 1
+    parameters.mate             = 0.4
+    parameters.n_hid_neurons    = 15
+    parameters.n_repeats        = 2
+    parameters.gens             = 20
+
+    # run the algorithm -> stats (n_repeats X gens X 4), won_gens (n_repeats)
+    stats, won_gens = main(parameters)
+
+    print(stats)
+    print(won_gens)
+    
+    # get the fitness
+    fitness = stats[:, :, 0]
+    mean_fitness = np.mean(fitness, axis=0)
+    std_fitness = np.std(fitness, axis=0)
+
+    # calculate the individual gain, i.e. (player_health - enemy_health)
+    individual_gain = stats[:, :, 1]
+    mean_individual_gain = np.mean(individual_gain, axis=0)
+    std_individual_gain = np.std(individual_gain, axis=0)
+
+    # maximum fitness
+    max_fitness = stats[:, :, 2]
+    mean_max_fitness = np.mean(max_fitness, axis=0)
+    std_max_fitness = np.std(max_fitness, axis=0)
+
+    # maximum individual gain
+    max_ind_gain = stats[:, :, 3]
+    mean_max_ind_gain = np.mean(max_ind_gain, axis=0)
+    std_max_ind_gain = np.std(max_ind_gain, axis=0)
+
+    # calculate the number of iterations until a solution was found
+    gens_until_solution = won_gens
+    try:
+        mean_gens_until_solution = np.nanmean(gens_until_solution, axis=0)
+    except:
+        mean_gens_until_solution = None
+

@@ -20,13 +20,13 @@ player_life = 100
 enemy_life = 100
 dom_u = 1
 dom_l = -1
-n_population = 50  # 100
+n_population = 100  # 100
 gens = 50
-mate = 0.3 #reproduction rate is 1 - mate - mutation
-mutation = 0.6 #mate+mutation need to be <= 1.0
+mate = 0.5 #reproduction rate is 1 - mate - mutation
+mutation = 0.5 #mate+mutation need to be <= 1.0
 last_best = 0
-n_hidden_neurons = 15  # number of possible actions
-children = 2
+n_hidden_neurons = 20  # number of possible actions
+children = 100
 mu = 10 #number individuals to select for next generation
 budget = 500
 enemies = 1
@@ -35,12 +35,13 @@ envs = []
 eatype = "Roulette"
 # initializes environment with ai player using random controller, playing against static enemy
 
-for enemy in [1, 2, 3]:
+for enemy in [4]:
 
     env = Environment(experiment_name=experiment_name,
                       enemies=[enemy],
                       player_controller=player_controller(n_hidden_neurons),
                       speed="fastest",
+                      level=2,
                       logs='off'
                       )
 
@@ -101,7 +102,7 @@ for enemy in [1, 2, 3]:
         pop = tb.select(pop, len(pop))
         offs = algorithms.varOr(pop, tb, children, mate, mutation)
         offs, fitnesses, enemy_lifes = evalpop(offs, env)
-        pop = tb.select(pop + offs, children) #eaMuPlusLambda selection procedure
+        pop = tb.select(pop + offs, len(pop)) #eaMuPlusLambda selection procedure
 
 
 

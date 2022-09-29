@@ -77,10 +77,9 @@ for enemy in [4, 6, 8]:
             
         
     tb.register("evaluate", evaluate)
-    tb.register("mate", tools.cxTwoPoint) # crossover operator 
-    tb.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.5)
-    tb.register("select", tools.selTournament
-    , tournsize=3)
+    tb.register("mate", tools.cxTwoPoint) # crossover operator
+    tb.register("mutate", tools.mutShuffleIndexes, indpb=0.5)
+    tb.register("select", tools.selBest)
 
     record = {}
     log = tools.Logbook()
