@@ -89,11 +89,10 @@ def main(args):
         # iterate over the number of generations
         for g in tqdm(range(1, args.gens)):
 
-
-            offspring = algorithms.varOr(population, toolbox, args.children, args.mate, args.mutation)
+            population = toolbox.select(population, len(population))
+            offspring = algorithms.varAnd(population, toolbox, args.mate, args.mutation)
             offspring, stats_g, solution = evaluate_pop(offspring, env, toolbox)
-            population = toolbox.select(population + offspring, len(population))
-
+            population = offspring
 
             # save generation statistics
             stats[n, g] = stats_g
