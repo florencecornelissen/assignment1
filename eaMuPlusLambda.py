@@ -6,6 +6,7 @@ from demo_controller import player_controller
 from deap import tools, creator, base, algorithms
 import numpy as np
 from tqdm import tqdm
+import pickle
 
 
 headless = True
@@ -41,17 +42,23 @@ def evaluate_pop(pop, env, toolbox):
         if e_l <= 0:
             solution = True
 
+    i_g_i = np.argmax(s, axis=0)[1]
+    i_g_v= s[i_g_i][1]
+
     s = [*np.mean(s, axis=0), *np.max(s, axis=0)]
-    return (pop, s, solution)
+    return (pop, s, solution, i_g_i, i_g_v)
 
 
 def main(args):
+
 
     # array to store the run stats
     stats = np.zeros((args.n_repeats, args.gens, 4))
     won_gens = [None for _ in range(args.n_repeats)]
 
     for n in range(args.n_repeats):
+        best_individual_gain = -10000
+
 
         # define the environment
         env = Environment(experiment_name=experiment_name,
@@ -82,18 +89,26 @@ def main(args):
 
         # initialize the population
         population = toolbox.population(n=args.n_population)
-        population, stats_g, solution = evaluate_pop(population, env, toolbox)
+        population, stats_g, solution, i_g_i, i_g_v = evaluate_pop(population, env, toolbox)
         stats[n, 0] = stats_g
 
+        if i_g_v > best_individual_gain:
+            best_individual_gain = i_g_v
+            with open(f'best_individual_eaMuPlusLambda_e7_{n+1}.pickle', 'wb') as f:
+                pickle.dump(population[i_g_i], f)
 
         # iterate over the number of generations
         for g in tqdm(range(1, args.gens)):
 
 
             offspring = algorithms.varOr(population, toolbox, args.children, args.mate, args.mutation)
-            offspring, stats_g, solution = evaluate_pop(offspring, env, toolbox)
-            population = toolbox.select(population + offspring, len(population))
+            offspring, stats_g, solution, i_g_i, i_g_v = evaluate_pop(offspring, env, toolbox)
+            if i_g_v > best_individual_gain:
+                best_individual_gain = i_g_v
+                with open(f'best_individual_eaMuPlusLambda_e7_{n+1}.pickle', 'wb') as f:
+                    pickle.dump(offspring[i_g_i] , f)
 
+            population = toolbox.select(population + offspring, len(population))
 
             # save generation statistics
             stats[n, g] = stats_g
@@ -119,43 +134,16 @@ if __name__ == "__main__":
 
     # add parameter values
     parameters.n_population     = 100
-    parameters.enemies          = [3] 
-    parameters.mutation         = 1
-    parameters.mate             = 0.4
+    parameters.enemies          = [7] 
+    parameters.mutation         = 0.1
+    parameters.mate             = 0.9
     parameters.n_hid_neurons    = 15
-    parameters.n_repeats        = 2
-    parameters.gens             = 20
+    parameters.n_repeats        = 9
+    parameters.gens             = 50
+    parameters.children         = 150
 
     # run the algorithm -> stats (n_repeats X gens X 4), won_gens (n_repeats)
     stats, won_gens = main(parameters)
-
-    print(stats)
+    with open(f'{parameters.enemies[0]}, {parameters.mutation}, {parameters.mate}, {parameters.n_hid_neurons}, {parameters.children}.npy', 'wb') as f:
+        np.save(f, stats)
     print(won_gens)
-    
-    # get the fitness
-    fitness = stats[:, :, 0]
-    mean_fitness = np.mean(fitness, axis=0)
-    std_fitness = np.std(fitness, axis=0)
-
-    # calculate the individual gain, i.e. (player_health - enemy_health)
-    individual_gain = stats[:, :, 1]
-    mean_individual_gain = np.mean(individual_gain, axis=0)
-    std_individual_gain = np.std(individual_gain, axis=0)
-
-    # maximum fitness
-    max_fitness = stats[:, :, 2]
-    mean_max_fitness = np.mean(max_fitness, axis=0)
-    std_max_fitness = np.std(max_fitness, axis=0)
-
-    # maximum individual gain
-    max_ind_gain = stats[:, :, 3]
-    mean_max_ind_gain = np.mean(max_ind_gain, axis=0)
-    std_max_ind_gain = np.std(max_ind_gain, axis=0)
-
-    # calculate the number of iterations until a solution was found
-    gens_until_solution = won_gens
-    try:
-        mean_gens_until_solution = np.nanmean(gens_until_solution, axis=0)
-    except:
-        mean_gens_until_solution = None
-
