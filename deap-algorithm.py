@@ -4,6 +4,8 @@ from evoman.environment import Environment
 from demo_controller import player_controller
 from deap import tools, creator, base, algorithms
 import numpy as np
+from itertools import repeat
+import math
 import json
 import multiprocessing
 
@@ -32,6 +34,23 @@ runs = 10
 envs = []
 eatype = "Roulette"
 # initializes environment with ai player using random controller, playing against static enemy
+
+# (self-)adaptive mutation
+def normal_dist(x, mean, std):
+    #mean = np.mean(x)
+    #std = np.std(x)
+    ans = (np.pi * std) * np.exp(-0.5 * ((x - mean) / std) ** 2)
+    ans1 = 1/(std * math.sqrt(2*std)) * np.exp(-0.5 * ((x - mean) / std) ** 2)
+    return ans
+
+def self_adaptive(individual,sigma,gens):
+    sigma = 1 - 0.9 * g/gens
+    size = len(individual)
+    sigmanew = sigma * np.exp(normal_dist(gene, 0, sigma))
+    genenew = gene + normal_dist(gene, 0, sigmanew)
+    return individual
+
+
 
 for enemy in range(1, 9):
 
@@ -63,6 +82,7 @@ for enemy in range(1, 9):
     def evaluate(x,env):
         tmp, e_l = simulation(env, x)
         return tmp, e_l
+
 
     def evalpop(pop,env):
         to_evaluate_ind = [ind for ind in pop if not ind.fitness.valid]

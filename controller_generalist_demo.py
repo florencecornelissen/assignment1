@@ -20,7 +20,7 @@ if not os.path.exists(experiment_name):
     os.makedirs(experiment_name)
 
 # Update the number of neurons for this specific example
-n_hidden_neurons = 0
+n_hidden_neurons = 5
 
 # initializes environment for multi objetive mode (generalist)  with static enemy and ai player
 env = Environment(experiment_name=experiment_name,
